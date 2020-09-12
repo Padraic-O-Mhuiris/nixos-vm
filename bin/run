@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[ -e ../Hydrogen.qcow2 ] && rm ../Hydrogen.qcow2
+
+nix-build '<nixpkgs/nixos>' -A vm -I nixos-config='./configuration.nix'
+./result/bin/run-Hydrogen-vm -vga virtio
