@@ -3,5 +3,5 @@ set -euo pipefail
 
 [ -e ../Hydrogen.qcow2 ] && rm ../Hydrogen.qcow2
 
-nix-build '<nixpkgs/nixos>' -A vm -I nixos-config='./configuration.nix'
-./result/bin/run-Hydrogen-vm -vga virtio
+nix-build '<nixpkgs/nixos>' -A vm -I nixos-config='./configuration.nix' --show-trace
+./result/bin/run-Hydrogen-vm -vga virtio -smp 4 -m 4096

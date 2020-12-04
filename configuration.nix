@@ -3,98 +3,155 @@
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
 { config, pkgs, ... }:
+let
 
-{
-  imports = [ # Include the results of the hardware scan.
-    # ./hardware-configuration.nix
-  ];
+  baseconfig = { allowUnfree = true; };
+  unstable = import <unstable> { config = baseconfig; };
+
+in {
+  imports = [ <home-manager/nixos> ];
+
+  nixpkgs.config = baseconfig // {
+    allowUnfree = true;
+    allowBroken = true;
+
+    packageOverrides = super:
+      let self = super.pkgs;
+      in {
+        myHaskellEnv = pkgs.haskellPackages.ghcWithHoogle (haskellPackages:
+          with haskellPackages; [
+            arrows
+            async
+            criterion
+            lens
+            generic-deriving
+            singletons
+            logict
+            either
+            either-unwrap
+            ghc-core
+            mueval
+            prelude-extras
+            protolude
+            idris
+            cabal-install
+            haskintex
+            stack
+            cabal2nix
+          ]);
+      };
+  };
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   networking.hostName = "Hydrogen"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-
-  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
-  # Per-interface useDHCP will be mandatory in the future, so this generated config
-  # replicates the default behaviour.
-  # networking.useDHCP = false;
-  # networking.interfaces.br-8ead908f8761.useDHCP = true;
-  # networking.interfaces.docker0.useDHCP = true;
-  # networking.interfaces.wlp0s20f3.useDHCP = true;
-
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+  networking.firewall.enable = true;
+  networking.wireless.enable = true;
 
   # Select internationalisation properties.
   i18n.defaultLocale = "en_IE.UTF-8";
   console = {
-    font = "Lat2-Terminus16";
-    keyMap = "us";
+    font = "latarcyrheb-sun32";
+    keyMap = "uk";
   };
 
-  # Set your time zone.
+  fonts.fonts = with pkgs; [ iosevka font-awesome-ttf ];
+
   time.timeZone = "Europe/Dublin";
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
-  environment.systemPackages = with pkgs; [ wget vim ripgrep ];
+  environment.systemPackages = with pkgs;
+    [
+      # unfree
+      google-chrome
+      spotify
+    ] ++ [
+      networkmanagerapplet
+      pass
+      browserpass
+      gnupg1
+      irssi
+      gnuplot
+      libreoffice
+      simplescreenrecorder
+      git
+      vim
+      brackets
+      graphviz
+      gifsicle
+      vlc
+      rhythmbox
+      ispell
+      bluez
+      blueman
+      pandoc
+      gnupg
+    ] ++ [
+      # Dev Stuff
+      nodejs
+      gcc
+      llvm
+      cmake
+      gnumake
+      gnum4
+    ] ++ [
+      # System Tools
+      nixops
+      wget
+      dhcpcd
+      file
+      less
+      rlwrap
+      findutils
+      perf-tools
+      htop
+      pkgconfig
+      numactl
+      diffutils
+      screen
+      tmux
+      xorg.libpciaccess
+      hfsprogs
+      # dmg2img
+      mkinitcpio-nfs-utils
+      ripgrep
+      htop
+      zsh
+      p7zip
+      dpkg
+      jq
+      tshark
+      pciutils
+      parted
+      gparted
+      binutils
+      unzip
+      tree
+    ];
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  #   pinentryFlavor = "gnome3";
-  # };
+  services.openssh.enable = true;
 
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # Enable CUPS to print documents.
-  # services.printing.enable = true;
-
-  # Enable sound.
   sound.enable = true;
   hardware.pulseaudio.enable = true;
 
-  # Enable the X11 windowing system.
-  # services.xserver.enable = true;
-  # services.xserver.layout = "us";
-  # services.xserver.xkbOptions = "eurosign:e";
+  services.xserver.enable = true;
+  services.xserver.layout = "us";
+  services.xserver.xkbOptions = "ctrl:swapcaps";
+  services.xserver.libinput.enable = true;
+  services.xserver.windowManager.i3.enable = true;
+  services.xserver.displayManager.lightdm.enable = true;
 
-  # Enable touchpad support.
-  # services.xserver.libinput.enable = true;
-
-  # Enable the KDE Desktop Environment.
-  # services.xserver.displayManager.sddm.enable = true;
-  # services.xserver.desktopManager.plasma5.enable = true;
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.jane = {
+  users.users.padraic = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+    home = "/home/padraic";
+    extraGroups = [ "wheel" "networkmanager" ]; # Enable ‘sudo’ for the user.
     password = "test";
   };
 
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "20.09"; # Did you read the comment?
+  home-manager.users.padraic = { pkgs, ... }: { programs.zsh.enable = true; };
+
+  system.stateVersion = "20.09";
 
 }
 
